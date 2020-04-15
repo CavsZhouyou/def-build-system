@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { BAD_REQUEST, CREATED, OK } from 'http-status-codes';
-import { writeFilePromise } from 'src/utils/publish';
+import { writeFilePromise, publishApp } from 'src/utils/publish';
 // Init shared
 const router = Router();
 
@@ -9,8 +9,11 @@ const router = Router();
  ******************************************************************************/
 
 router.get('/buildPublish', async (req: Request, res: Response) => {
-  const result = await writeFilePromise('src/public/test.txt', '123');
-  return res.status(OK).json({ data: result });
+  // const result = await writeFilePromise('src/public/test.txt', '123');
+
+  await publishApp();
+
+  return res.status(OK).json({ data: 123 });
 });
 
 /******************************************************************************

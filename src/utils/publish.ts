@@ -4,8 +4,10 @@
  * @TodoList: 无
  * @Date: 2020-04-15 16:18:55
  * @Last Modified by: zhouyou@werun
- * @Last Modified time: 2020-04-15 17:23:39
+ * @Last Modified time: 2020-04-15 18:14:14
  */
+
+import { version } from 'punycode';
 
 const fs = require('fs');
 const DOCKER_REGISTRY = '192.168.3.61:5000';
@@ -74,7 +76,7 @@ const getDeployFileContent = (appName: string, version: string) => {
   const dockerImageName = `${DOCKER_REGISTRY}/${appName}:${version}`;
   const deployFileContent = `
         #!/bin/bash
-        docker build --network=host -t ${dockerImageName} .
+        docker build --network=host -t ${dockerImageName} src/publish/.
         docker push ${dockerImageName} 
         docker images | grep none | awk '{print $3}' | xargs docker rmi
         `;
@@ -86,7 +88,7 @@ const getDockerfileContent = (
   appName: string,
   branch: string
 ) => {
-  const appFileName = appName.split('/')[0];
+  const appFileName = appName.split('/')[1];
   const dockerfileContent = `
         FROM node:latest as builder
 
@@ -122,14 +124,12 @@ export const writeFilePromise = async (filename: string, content: string) => {
     fs.writeFile(filename, content, function (err: any) {
       if (err) {
         // 创建失败
-        reject(false);
+        reject(err);
       }
 
       // 创建成功
-      resolve(true);
+      resolve();
     });
-  }).then((result: any) => {
-    return result;
   });
 };
 
@@ -145,12 +145,65 @@ export const execPromise = async (command: string) => {
   return new Promise((resolve, reject) => {
     exec(command, function (err: any) {
       if (err) {
-        reject(false);
+        reject(err);
       }
 
-      resolve(true);
+      resolve();
     });
-  }).then((result: any) => {
-    return result;
   });
+};
+
+/**
+ * unlink Promise 封装
+ *
+ * @param {string} filename
+ * @returns
+ */
+export const deleteFilePromise = async (filename: string) => {
+  return new Promise((resolve, reject) => {
+    fs.unlink(filename, function (err: any) {
+      if (err) {
+        reject(err);
+      }
+
+      resolve();
+    });
+  });
+};
+
+export const publishApp = async () => {
+  try {
+    const appRepository =
+      'http://192.168.3.61:10080/taobao-fe/def-deploy-demo.git';
+    const appName = 'taobao-fe/def-deploy-demo';
+    const branch = 'daily/0.0.1';
+    const version = '0.0.1';
+    const dockerfilePath = 'src/publish/Dockerfile';
+    const dockerfileContent = getDockerfileContent(
+      appRepository,
+      appName,
+      branch
+    );
+    const deployFilePath = 'src/publish/deploy.sh';
+    const deployFileContent = getDeployFileContent(appName, version);
+    const logFilePath = 'src/publish/deploy.log';
+    const logFileContent = '';
+
+    // 创建 dockerfile 文件
+    await writeFilePromise(dockerfilePath, dockerfileContent);
+    // 创建 deploy.sh 文件
+    await writeFilePromise(deployFilePath, deployFileContent);
+    // 赋予 deploy.sh 文件执行权限
+    await execPromise(`chmod +x ${deployFilePath}`);
+    // 创建 log 文件
+    await writeFilePromise(logFilePath, logFileContent);
+    // 监听 log 文件
+    watchFile(logFilePath);
+    // 执行发布命令
+    await execPromise(`${deployFilePath} > ${logFilePath} 2>&1`);
+    // 取消监听 log 文件
+    fs.unwatchFile('./test.log');
+  } catch (error) {
+    console.log(error);
+  }
 };
