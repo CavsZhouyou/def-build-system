@@ -4,7 +4,7 @@
  * @TodoList: 无
  * @Date: 2020-04-15 16:18:55
  * @Last Modified by: zhouyou@werun
- * @Last Modified time: 2020-04-15 16:51:02
+ * @Last Modified time: 2020-04-15 17:23:39
  */
 
 const fs = require('fs');
@@ -126,6 +126,28 @@ export const writeFilePromise = async (filename: string, content: string) => {
       }
 
       // 创建成功
+      resolve(true);
+    });
+  }).then((result: any) => {
+    return result;
+  });
+};
+
+/**
+ * exec Promise 封装
+ *
+ * @param {string} command
+ * @returns
+ */
+export const execPromise = async (command: string) => {
+  const exec = require('child_process').exec;
+
+  return new Promise((resolve, reject) => {
+    exec(command, function (err: any) {
+      if (err) {
+        reject(false);
+      }
+
       resolve(true);
     });
   }).then((result: any) => {
