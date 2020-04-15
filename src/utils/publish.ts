@@ -4,7 +4,7 @@
  * @TodoList: 无
  * @Date: 2020-04-15 16:18:55
  * @Last Modified by: zhouyou@werun
- * @Last Modified time: 2020-04-15 18:14:14
+ * @Last Modified time: 2020-04-15 18:34:28
  */
 
 import { version } from 'punycode';
@@ -85,10 +85,9 @@ const getDeployFileContent = (appName: string, version: string) => {
 
 const getDockerfileContent = (
   appRepository: string,
-  appName: string,
+  appFileName: string,
   branch: string
 ) => {
-  const appFileName = appName.split('/')[1];
   const dockerfileContent = `
         FROM node:latest as builder
 
@@ -176,12 +175,14 @@ export const publishApp = async () => {
     const appRepository =
       'http://192.168.3.61:10080/taobao-fe/def-deploy-demo.git';
     const appName = 'taobao-fe/def-deploy-demo';
+    const appSubName = appName.split('/')[1];
     const branch = 'daily/0.0.1';
-    const version = '0.0.1';
+    const version = '0.0.2';
+    const dockerImageName = `${DOCKER_REGISTRY}/${appName}:${version}`;
     const dockerfilePath = 'src/publish/Dockerfile';
     const dockerfileContent = getDockerfileContent(
       appRepository,
-      appName,
+      appSubName,
       branch
     );
     const deployFilePath = 'src/publish/deploy.sh';
@@ -203,6 +204,12 @@ export const publishApp = async () => {
     await execPromise(`${deployFilePath} > ${logFilePath} 2>&1`);
     // 取消监听 log 文件
     fs.unwatchFile('./test.log');
+    // 关闭容器
+    await execPromise(`docker stop ${appSubName}`);
+    // 启动 docker 镜像
+    await execPromise(
+      `docker run -d -p 9000:80 --rm --name ${appSubName} ${dockerImageName}`
+    );
   } catch (error) {
     console.log(error);
   }
