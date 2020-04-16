@@ -9,6 +9,8 @@
 
 const fs = require('fs');
 const DOCKER_REGISTRY = '192.168.3.61:5000';
+const GIT_USER_NAME = 'root';
+const GIT_USER_EMAIL = 'zhouyou.world@outlook.com';
 
 /**
  * 文件变化监听
@@ -124,6 +126,46 @@ const getDockerfileContent = (
 };
 
 /**
+ * 获取 git_merge.sh
+ *
+ * @param {string} appRepository
+ * @param {string} appFileName
+ * @param {string} branch
+ * @param {string} version
+ * @returns
+ */
+const getGitFileContent = (
+  appRepository: string,
+  appFileName: string,
+  branch: string,
+  version: string
+) => {
+  const gitFileContent = `
+        #!/bin/bash
+
+        git clone ${appRepository} 
+
+        cd ${appFileName} 
+
+        git config user.name = "${GIT_USER_NAME}"
+        git config user.email = "${GIT_USER_EMAIL}"
+
+        git checkout ${branch} 
+        git tag ${version} 
+        git checkout master
+
+        git merge ${branch}
+        git push
+        git push --tags
+
+        cd ../
+        rm -rf ${appFileName}
+        `;
+
+  return gitFileContent;
+};
+
+/**
  * 创建文件 Promise 封装
  *
  * @param {string} filename
@@ -185,7 +227,8 @@ export const deleteFilePromise = async (filename: string) => {
 export const publishApp = async (
   appRepository: string,
   appName: string,
-  branch: string
+  branch: string,
+  publishEnv: string
 ) => {
   const logData = {
     log: '',
@@ -207,8 +250,8 @@ export const publishApp = async (
       appSubName,
       version
     );
-    const logFilePath = 'src/publish/deploy.log';
-    const logFileContent = '';
+    const deployLogFilePath = 'src/publish/deploy.log';
+    const deployLogFileContent = '';
 
     // 创建 dockerfile 文件
     await writeFilePromise(dockerfilePath, dockerfileContent);
@@ -217,19 +260,45 @@ export const publishApp = async (
     // 赋予 deploy.sh 文件执行权限
     await execPromise(`chmod +x ${deployFilePath}`);
     // 创建 log 文件
-    await writeFilePromise(logFilePath, logFileContent);
+    await writeFilePromise(deployLogFilePath, deployLogFileContent);
     // 监听 log 文件
-    watchFile(logFilePath, logData);
+    watchFile(deployLogFilePath, logData);
     // 执行发布命令
-    await execPromise(`${deployFilePath} > ${logFilePath} 2>&1`);
+    await execPromise(`${deployFilePath} > ${deployLogFilePath} 2>&1`);
     // 取消监听 log 文件
-    fs.unwatchFile(logFilePath);
+    fs.unwatchFile(deployLogFilePath);
     // 关闭容器
     // await execPromise(`docker stop ${appSubName}`);
     // 启动 docker 镜像
     await execPromise(
       `docker run -d -p 9000:80 --rm --name ${appSubName} ${dockerImageName}`
     );
+
+    // 线上发布时，合并当前分支到 master
+    if (publishEnv === 'online') {
+      const gitFilePath = 'src/publish/git_merge.sh';
+      const gitFileContent = getGitFileContent(
+        appRepository,
+        appSubName,
+        branch,
+        version
+      );
+      const gitLogFilePath = 'src/publish/git_merge.log';
+      const gitLogFileContent = '';
+
+      // 创建 git_merge.sh 文件
+      await writeFilePromise(gitFilePath, gitFileContent);
+      // 赋予 git_merge.sh 文件执行权限
+      await execPromise(`chmod +x ${gitFilePath}`);
+      // 创建 log 文件
+      await writeFilePromise(gitLogFilePath, gitLogFileContent);
+      // 监听 log 文件
+      watchFile(gitLogFilePath, logData);
+      // 执行 merge 命令
+      await execPromise(`${gitFilePath} > ${gitLogFilePath} 2>&1`);
+      // 取消监听 log 文件
+      fs.unwatchFile(gitLogFilePath);
+    }
 
     return {
       success: true,

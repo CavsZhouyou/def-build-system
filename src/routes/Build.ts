@@ -30,7 +30,12 @@ router.post('/buildPublish', async (req: Request, res: Response) => {
 
   if (result.success) {
     const { repository, publishId } = result.data;
-    const publishResult = await publishApp(repository, appName, branch);
+    const publishResult = await publishApp(
+      repository,
+      appName,
+      branch,
+      publishEnv
+    );
 
     const { log } = publishResult;
     const publishStatus = publishResult.success ? '4001' : '4002';
