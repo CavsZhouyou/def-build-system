@@ -4,7 +4,7 @@
  * @TodoList: 无
  * @Date: 2020-04-15 16:18:55
  * @Last Modified by: zhouyou@werun
- * @Last Modified time: 2020-04-16 11:41:55
+ * @Last Modified time: 2020-04-16 12:07:50
  */
 
 const fs = require('fs');
@@ -75,15 +75,21 @@ const readFile = (
  * 获取 deploy.sh 内容
  *
  * @param {string} appName
+ * @param {string} appSubName
  * @param {string} version
  * @returns
  */
-const getDeployFileContent = (appName: string, version: string) => {
+const getDeployFileContent = (
+  appName: string,
+  appSubName: string,
+  version: string
+) => {
   const dockerImageName = `${DOCKER_REGISTRY}/${appName}:${version}`;
   const deployFileContent = `
         #!/bin/bash
         docker build --network=host -t ${dockerImageName} src/publish/.
         docker push ${dockerImageName} 
+        docker stop ${appSubName}
         docker images | grep none | awk '{print $3}' | xargs docker rmi
         `;
   return deployFileContent;
@@ -196,7 +202,11 @@ export const publishApp = async (
       branch
     );
     const deployFilePath = 'src/publish/deploy.sh';
-    const deployFileContent = getDeployFileContent(appName, version);
+    const deployFileContent = getDeployFileContent(
+      appName,
+      appSubName,
+      version
+    );
     const logFilePath = 'src/publish/deploy.log';
     const logFileContent = '';
 
@@ -215,7 +225,7 @@ export const publishApp = async (
     // 取消监听 log 文件
     fs.unwatchFile(logFilePath);
     // 关闭容器
-    await execPromise(`docker stop ${appSubName}`);
+    // await execPromise(`docker stop ${appSubName}`);
     // 启动 docker 镜像
     await execPromise(
       `docker run -d -p 9000:80 --rm --name ${appSubName} ${dockerImageName}`

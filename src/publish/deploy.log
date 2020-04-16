@@ -2,56 +2,56 @@ Sending build context to Docker daemon  4.096kB
 Step 1/10 : FROM node:latest as builder
  ---> 2f1ff44a8bb5
 Step 2/10 : ENV PROJECT_ENV production
- ---> Running in e600ce640354
-Removing intermediate container e600ce640354
- ---> cf3ce360b6c7
+ ---> Running in 9e44cab0f759
+Removing intermediate container 9e44cab0f759
+ ---> 5e3f67eea07d
 Step 3/10 : ENV NODE_ENV production
- ---> Running in 8386e835facb
-Removing intermediate container 8386e835facb
- ---> 57db0cd0d52d
+ ---> Running in b76156e992e4
+Removing intermediate container b76156e992e4
+ ---> e1e2bcfb2e0f
 Step 4/10 : RUN git clone http://192.168.3.61:10080/taobao-fe/def-deploy-demo.git
- ---> Running in 8d4bbbb99110
+ ---> Running in 3184b8349959
 [91mCloning into 'def-deploy-demo'...
-[0mRemoving intermediate container 8d4bbbb99110
- ---> 1850010748e0
+[0mRemoving intermediate container 3184b8349959
+ ---> aa04b1727e0b
 Step 5/10 : WORKDIR /def-deploy-demo
- ---> Running in 689df7141f5a
-Removing intermediate container 689df7141f5a
- ---> 555ccab84402
+ ---> Running in fbf0d998ec7d
+Removing intermediate container fbf0d998ec7d
+ ---> 731432460e6a
 Step 6/10 : RUN git checkout daily/0.0.1 && npm config set registry https://registry.npm.taobao.org/
- ---> Running in 6e85af1034a1
+ ---> Running in e36155b67f3d
+Branch daily/0.0.1 set up to track remote branch daily/0.0.1 from origin.
 [91mSwitched to a new branch 'daily/0.0.1'
-[0mBranch daily/0.0.1 set up to track remote branch daily/0.0.1 from origin.
-Removing intermediate container 6e85af1034a1
- ---> 85863c2993fd
+[0mRemoving intermediate container e36155b67f3d
+ ---> a7946a2eb676
 Step 7/10 : RUN npm install --production && npm run build
- ---> Running in b60347072ab5
+ ---> Running in c594bac606fb
 [91mnpm WARN webpack-test@1.0.0 No repository field.
-[0m[91mnpm WARN optional SKIPPING OPTIONAL DEPENDENCY: fsevents@1.2.12 (node_modules/fsevents):
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: fsevents@1.2.12 (node_modules/fsevents):
 npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for fsevents@1.2.12: wanted {"os":"darwin","arch":"any"} (current: {"os":"linux","arch":"x64"})
-[0m[91m
-[0madded 781 packages from 432 contributors in 20.184s
+
+[0madded 781 packages from 432 contributors in 20.316s
 
 > webpack-test@1.0.0 build /def-deploy-demo
 > webpack
 
 [91mBrowserslist: caniuse-lite is outdated. Please run next command `npm update`
-[0mHash: d726a4d9a3b205b403ec
+[0mHash: b2ca07988ff616f39157
 Version: webpack 4.41.1
-Time: 2143ms
-Built at: 04/16/2020 3:45:34 AM
+Time: 2073ms
+Built at: 04/16/2020 4:13:28 AM
                Asset        Size  Chunks                         Chunk Names
        ./css/app.css   753 bytes       0  [emitted]              app
-./js/app.d726a4d9.js  1020 bytes       0  [emitted] [immutable]  app
-          index.html    1.48 KiB          [emitted]              
-Entrypoint app = ./css/app.css ./js/app.d726a4d9.js
+./js/app.b2ca0798.js  1020 bytes       0  [emitted] [immutable]  app
+          index.html    1.45 KiB          [emitted]              
+Entrypoint app = ./css/app.css ./js/app.b2ca0798.js
 [0] ./src/main.js 107 bytes {0} [built]
 [1] ./src/style.css 39 bytes {0} [built]
     + 1 hidden module
 Child html-webpack-plugin for "index.html":
      1 asset
     Entrypoint undefined = index.html
-    [0] ./node_modules/html-webpack-plugin/lib/loader.js!./public/index.html 1.65 KiB {0} [built]
+    [0] ./node_modules/html-webpack-plugin/lib/loader.js!./public/index.html 1.6 KiB {0} [built]
     [2] (webpack)/buildin/global.js 472 bytes {0} [built]
     [3] (webpack)/buildin/module.js 497 bytes {0} [built]
         + 1 hidden module
@@ -59,34 +59,38 @@ Child mini-css-extract-plugin node_modules/css-loader/dist/cjs.js!node_modules/p
     Entrypoint mini-css-extract-plugin = *
     [0] ./node_modules/css-loader/dist/cjs.js!./node_modules/postcss-loader/src!./src/style.css 938 bytes {0} [built]
         + 1 hidden module
-Removing intermediate container b60347072ab5
- ---> 670b0b14db5b
+Removing intermediate container c594bac606fb
+ ---> bc54787f4c97
 Step 8/10 : FROM nginx:alpine
  ---> 48c8a7c47625
 Step 9/10 : COPY --from=builder def-deploy-demo/dist /usr/share/nginx/html
- ---> Using cache
- ---> 4b8e2a63b549
+ ---> ff25ac296912
 Step 10/10 : COPY --from=builder def-deploy-demo/nginx /etc/nginx/conf.d
- ---> Using cache
- ---> 5f3071bb9665
-Successfully built 5f3071bb9665
+ ---> 67f5ba94a993
+Successfully built 67f5ba94a993
 Successfully tagged 192.168.3.61:5000/taobao-fe/def-deploy-demo:0.0.1
 The push refers to repository [192.168.3.61:5000/taobao-fe/def-deploy-demo]
-8f00b550e370: Preparing
-f34334100591: Preparing
+9ab35f028d59: Preparing
+43b4fc88344b: Preparing
 1d98ebade1db: Preparing
 531743b7098c: Preparing
-8f00b550e370: Layer already exists
-f34334100591: Layer already exists
 531743b7098c: Layer already exists
 1d98ebade1db: Layer already exists
-0.0.1: digest: sha256:2ab5bde706f0526b9add144574df4c4c4c74d71d9a4a7b4a8077e17eca95e43f size: 1154
-Deleted: sha256:670b0b14db5beecef2b44d3ae18601799e76cb482e419c5af991741069873da9
-Deleted: sha256:4ea37878ffd3cd83ebead4904be70136ad31fab3e864e31252d0dbceee7d072f
-Deleted: sha256:85863c2993fd8d85c1078e63ebc03cb302ca059e629c1579ad9581a67d0b421a
-Deleted: sha256:e2989b42d732de2944e80da02f6f011ae54509abbae4e1fe3e6232b680b0f759
-Deleted: sha256:555ccab84402dd44d9495fd255c0ebdc71424a2a3f7571f5fc42b36ab18c4500
-Deleted: sha256:1850010748e01c72f7b38be47f0fd3ab8dd825e2f2065154cc951d76bc869528
-Deleted: sha256:db5889bee57f5d3490d37d11a0f912c8d66947a174234a02115cbab55bce6c0a
-Deleted: sha256:57db0cd0d52d5e11ec3dff7ed4d5c2eb114c315548e2927bf321531d1db4a112
-Deleted: sha256:cf3ce360b6c7f950f42afe23dcf6f529bf19f1008c4622a48106b05c56871427
+43b4fc88344b: Pushed
+9ab35f028d59: Pushed
+0.0.1: digest: sha256:b18c4cc01aec2ee39ca04a28d39235c1bace159c8671d225161fe7a588023237 size: 1154
+def-deploy-demo
+Deleted: sha256:bc54787f4c97fcaeebd0efda0d31d4a08bc7571ca6cb5f8d2621c87fc6eed530
+Deleted: sha256:2c1fe5f498d9757cb4ffb2fca16fbb3816fecceb8ed13e794cc66470282e3df2
+Deleted: sha256:a7946a2eb676e17372c4280bdde2e14a00ef9dfd4864470cb86bfca59b79f0e7
+Deleted: sha256:b4cb7169ee3aa07619ff6c204d2ea8ec1faefcd6f7c5c97a1e053bc6f575ccd0
+Deleted: sha256:731432460e6addeb397499b598a8f37627497bf473ac5b1bdc2d56f0a60ba76d
+Deleted: sha256:aa04b1727e0b1d2e8cd5f9e73e5abba53cf6224e6f7f9a4cca5fdb0cfce2fab3
+Deleted: sha256:c1aa53b845b8c82cebca02a66355803c994090a58d32eda08cfcb87b5f802a61
+Deleted: sha256:e1e2bcfb2e0f72e9abb0fa6658173940ff38abbbeb2e107882eedb38b36c8028
+Deleted: sha256:5e3f67eea07d29c306789421c260074a2f5b7ebfe8251d07a30c391de0394cfc
+Untagged: 192.168.3.61:5000/taobao-fe/def-deploy-demo@sha256:43c3d4da1933487cae3b1d8bb3c5f8a1520fb0e1aa2202435a0c903b1df4fbb7
+Deleted: sha256:2c966d84697ec2d8c637cc99c32f37a39a9578fa572ea777c44523c6963b96a7
+Deleted: sha256:6fd4b63c27fc2cb449bcca4f7c7fcb4e396922bfa6ccbb4c453f98ed4842af92
+Deleted: sha256:7bfe6cdf312b643fa239d8f1dfd7c734f90d5006d848e80699d467e7b25fdf81
+Deleted: sha256:3cd051dbe01db9188e943b5881767b472df4c5dfff62c837be820c9598602199
