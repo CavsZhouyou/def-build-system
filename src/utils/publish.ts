@@ -4,10 +4,8 @@
  * @TodoList: 无
  * @Date: 2020-04-15 16:18:55
  * @Last Modified by: zhouyou@werun
- * @Last Modified time: 2020-04-15 18:34:28
+ * @Last Modified time: 2020-04-16 11:21:27
  */
-
-import { version } from 'punycode';
 
 const fs = require('fs');
 const DOCKER_REGISTRY = '192.168.3.61:5000';
@@ -17,7 +15,7 @@ const DOCKER_REGISTRY = '192.168.3.61:5000';
  *
  * @param {string} filename
  */
-const watchFile = (filename: string) => {
+const watchFile = (filename: string, logData: { log: string }) => {
   fs.open(filename, 'a+', function (err: any, fd: any) {
     if (err) {
       throw err;
@@ -35,7 +33,7 @@ const watchFile = (filename: string) => {
           // 根据文档修改内容创建 buffer
           buffer = Buffer.alloc(curr.size - prev.size);
           // 获取新增加内容
-          readFile(fd, buffer, curr.size - prev.size, prev.size);
+          readFile(fd, buffer, curr.size - prev.size, prev.size, logData);
         }
       }
     );
@@ -50,7 +48,13 @@ const watchFile = (filename: string) => {
  * @param {number} length
  * @param {number} position
  */
-const readFile = (fd: any, buffer: any, length: number, position: number) => {
+const readFile = (
+  fd: any,
+  buffer: any,
+  length: number,
+  position: number,
+  logData: { log: string }
+) => {
   //  读取文件
   fs.read(fd, buffer, 0, length, position, function (
     err: any,
@@ -60,6 +64,8 @@ const readFile = (fd: any, buffer: any, length: number, position: number) => {
     if (err) {
       console.error(err);
     }
+
+    logData.log += buffer.toString();
 
     console.log(buffer.toString());
   });
@@ -170,14 +176,18 @@ export const deleteFilePromise = async (filename: string) => {
   });
 };
 
-export const publishApp = async () => {
+export const publishApp = async (
+  appRepository: string,
+  appName: string,
+  branch: string
+) => {
+  const logData = {
+    log: '',
+  };
+
   try {
-    const appRepository =
-      'http://192.168.3.61:10080/taobao-fe/def-deploy-demo.git';
-    const appName = 'taobao-fe/def-deploy-demo';
     const appSubName = appName.split('/')[1];
-    const branch = 'daily/0.0.1';
-    const version = '0.0.2';
+    const version = branch.split('/')[1];
     const dockerImageName = `${DOCKER_REGISTRY}/${appName}:${version}`;
     const dockerfilePath = 'src/publish/Dockerfile';
     const dockerfileContent = getDockerfileContent(
@@ -199,7 +209,7 @@ export const publishApp = async () => {
     // 创建 log 文件
     await writeFilePromise(logFilePath, logFileContent);
     // 监听 log 文件
-    watchFile(logFilePath);
+    watchFile(logFilePath, logData);
     // 执行发布命令
     await execPromise(`${deployFilePath} > ${logFilePath} 2>&1`);
     // 取消监听 log 文件
@@ -210,7 +220,16 @@ export const publishApp = async () => {
     await execPromise(
       `docker run -d -p 9000:80 --rm --name ${appSubName} ${dockerImageName}`
     );
+
+    return {
+      success: true,
+      log: logData.log,
+    };
   } catch (error) {
     console.log(error);
+    return {
+      success: false,
+      log: logData.log,
+    };
   }
 };
