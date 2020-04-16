@@ -84,9 +84,16 @@ const readFile = (
 const getDeployFileContent = (
   appName: string,
   appSubName: string,
-  version: string
+  version: string,
+  isFirstDeploy: boolean
 ) => {
   const dockerImageName = `${DOCKER_REGISTRY}/${appName}:${version}`;
+  const firstDeployFileContent = `
+        #!/bin/bash
+        docker build --network=host -t ${dockerImageName} src/publish/.
+        docker push ${dockerImageName} 
+        docker images | grep none | awk '{print $3}' | xargs docker rmi
+        `;
   const deployFileContent = `
         #!/bin/bash
         docker build --network=host -t ${dockerImageName} src/publish/.
@@ -94,7 +101,7 @@ const getDeployFileContent = (
         docker stop ${appSubName}
         docker images | grep none | awk '{print $3}' | xargs docker rmi
         `;
-  return deployFileContent;
+  return isFirstDeploy ? firstDeployFileContent : deployFileContent;
 };
 
 const getDockerfileContent = (
@@ -228,7 +235,8 @@ export const publishApp = async (
   appRepository: string,
   appName: string,
   branch: string,
-  publishEnv: string
+  publishEnv: string,
+  isFirstDeploy: boolean
 ) => {
   const logData = {
     log: '',
@@ -248,7 +256,8 @@ export const publishApp = async (
     const deployFileContent = getDeployFileContent(
       appName,
       appSubName,
-      version
+      version,
+      isFirstDeploy
     );
     const deployLogFilePath = 'src/publish/deploy.log';
     const deployLogFileContent = '';
@@ -267,11 +276,9 @@ export const publishApp = async (
     await execPromise(`${deployFilePath} > ${deployLogFilePath} 2>&1`);
     // 取消监听 log 文件
     fs.unwatchFile(deployLogFilePath);
-    // 关闭容器
-    // await execPromise(`docker stop ${appSubName}`);
     // 启动 docker 镜像
     await execPromise(
-      `docker run -d -p 9000:80 --rm --name ${appSubName} ${dockerImageName}`
+      `docker run -d -p 9001:80 --rm --name ${appSubName} ${dockerImageName}`
     );
 
     // 线上发布时，合并当前分支到 master

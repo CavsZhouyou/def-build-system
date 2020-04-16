@@ -29,12 +29,13 @@ router.post('/buildPublish', async (req: Request, res: Response) => {
   );
 
   if (result.success) {
-    const { repository, publishId } = result.data;
+    const { repository, publishId, isFistPublish } = result.data;
     const publishResult = await publishApp(
       repository,
       appName,
       branch,
-      publishEnv
+      publishEnv,
+      isFistPublish
     );
 
     const { log } = publishResult;
@@ -48,18 +49,6 @@ router.post('/buildPublish', async (req: Request, res: Response) => {
   } else {
     return res.status(OK).json({ ...result });
   }
-
-  // const appRepository =
-  //   'http://192.168.3.61:10080/taobao-fe/def-deploy-demo.git';
-  // const appName = 'taobao-fe/def-deploy-demo';
-  // const branch = 'daily/0.0.1';
-  // const result = await publishApp(appRepository, appName, branch);
-
-  // if (result.success) {
-  //   return res.status(OK).json({ success: true, data: result.log });
-  // } else {
-  //   return res.status(OK).json({ success: false, data: '发布失败' });
-  // }
 });
 
 /******************************************************************************
