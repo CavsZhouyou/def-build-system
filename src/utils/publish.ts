@@ -4,7 +4,7 @@
  * @TodoList: 无
  * @Date: 2020-04-15 16:18:55
  * @Last Modified by: zhouyou@werun
- * @Last Modified time: 2020-04-16 11:21:27
+ * @Last Modified time: 2020-04-16 11:41:55
  */
 
 const fs = require('fs');
@@ -213,7 +213,7 @@ export const publishApp = async (
     // 执行发布命令
     await execPromise(`${deployFilePath} > ${logFilePath} 2>&1`);
     // 取消监听 log 文件
-    fs.unwatchFile('./test.log');
+    fs.unwatchFile(logFilePath);
     // 关闭容器
     await execPromise(`docker stop ${appSubName}`);
     // 启动 docker 镜像
