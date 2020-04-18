@@ -240,7 +240,8 @@ export const publishApp = async (
   appRepository: string,
   appName: string,
   branch: string,
-  publishEnv: string
+  publishEnv: string,
+  port: number
 ) => {
   const logData = {
     log: '',
@@ -281,7 +282,7 @@ export const publishApp = async (
     fs.unwatchFile(deployLogFilePath);
     // 启动 docker 镜像
     await execPromise(
-      `docker run -d -p 9001:80 --rm --name ${appSubName} ${dockerImageName}`
+      `docker run -d -p ${port}:80 --rm --name ${appSubName} ${dockerImageName}`
     );
 
     // 线上发布时，合并当前分支到 master
