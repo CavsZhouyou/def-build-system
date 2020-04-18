@@ -84,10 +84,15 @@ const readFile = (
 const getDeployFileContent = (
   appName: string,
   appSubName: string,
-  version: string,
-  isFirstDeploy: boolean
+  version: string
 ) => {
   const dockerImageName = `${DOCKER_REGISTRY}/${appName}:${version}`;
+  const exec = require('child_process').execSync;
+  const result = exec(`docker ps | grep ${appSubName} | awk '{print $1}'`)
+    .toString('utf8')
+    .trim();
+  const hasDeployed = result.length !== 0;
+
   const firstDeployFileContent = `
         #!/bin/bash
         docker build --network=host -t ${dockerImageName} src/publish/.
@@ -101,7 +106,7 @@ const getDeployFileContent = (
         docker stop ${appSubName}
         docker images | grep none | awk '{print $3}' | xargs docker rmi
         `;
-  return isFirstDeploy ? firstDeployFileContent : deployFileContent;
+  return hasDeployed ? deployFileContent : firstDeployFileContent;
 };
 
 const getDockerfileContent = (
@@ -235,8 +240,7 @@ export const publishApp = async (
   appRepository: string,
   appName: string,
   branch: string,
-  publishEnv: string,
-  isFirstDeploy: boolean
+  publishEnv: string
 ) => {
   const logData = {
     log: '',
@@ -256,8 +260,7 @@ export const publishApp = async (
     const deployFileContent = getDeployFileContent(
       appName,
       appSubName,
-      version,
-      isFirstDeploy
+      version
     );
     const deployLogFilePath = 'src/publish/deploy.log';
     const deployLogFileContent = '';

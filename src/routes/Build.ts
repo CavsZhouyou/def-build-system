@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
-import { BAD_REQUEST, CREATED, OK } from 'http-status-codes';
-import { writeFilePromise, publishApp } from 'src/utils/publish';
+import { OK } from 'http-status-codes';
+import { publishApp } from 'src/utils/publish';
 import { paramMissingError } from '@shared/constants';
 import { createPublishLog, updatePublishLog } from 'src/utils/requests';
 // Init shared
@@ -29,13 +29,12 @@ router.post('/buildPublish', async (req: Request, res: Response) => {
   );
 
   if (result.success) {
-    const { repository, publishId, isFistPublish } = result.data;
+    const { repository, publishId } = result.data;
     const publishResult = await publishApp(
       repository,
       appName,
       branch,
-      publishEnv,
-      isFistPublish
+      publishEnv
     );
 
     const { log } = publishResult;
