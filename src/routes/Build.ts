@@ -44,6 +44,7 @@ router.post('/buildPublish', async (req: Request, res: Response) => {
     await updatePublishLog(publishId, log, publishStatus);
     return res.status(OK).json({
       success: true,
+      address: `http://daily.def.com:${port}`,
       message: publishResult.success ? '发布成功！' : '发布失败',
     });
   } else {
