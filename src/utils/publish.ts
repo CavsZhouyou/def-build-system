@@ -8,7 +8,8 @@
  */
 
 const fs = require('fs');
-const DOCKER_REGISTRY = '192.168.3.61:5000';
+// const DOCKER_REGISTRY = '192.168.3.61:5000';
+const DOCKER_REGISTRY = '123.57.239.134:5000';
 const GIT_USER_NAME = 'root';
 const GIT_USER_EMAIL = 'zhouyou.world@outlook.com';
 
@@ -76,37 +77,50 @@ const readFile = (
 /**
  * 获取 deploy.sh 内容
  *
+ * @param {number} port
  * @param {string} appName
  * @param {string} appSubName
  * @param {string} version
  * @returns
  */
 const getDeployFileContent = (
+  port: number,
   appName: string,
   appSubName: string,
   version: string
 ) => {
   const dockerImageName = `${DOCKER_REGISTRY}/${appName}:${version}`;
-  const exec = require('child_process').execSync;
-  const result = exec(`docker ps | grep ${appSubName} | awk '{print $1}'`)
-    .toString('utf8')
-    .trim();
-  const hasDeployed = result.length !== 0;
+  // const exec = require('child_process').execSync;
+  // const result = exec(`docker ps | grep ${appSubName} | awk '{print $1}'`)
+  //   .toString('utf8')
+  //   .trim();
+  // const hasDeployed = result.length !== 0;
 
-  const firstDeployFileContent = `
-        #!/bin/bash
-        docker build --network=host -t ${dockerImageName} src/publish/.
-        docker push ${dockerImageName} 
-        docker images | grep none | awk '{print $3}' | xargs docker rmi
-        `;
+  // const firstDeployFileContent = `
+  //       #!/bin/bash
+  //       docker build --network=host -t ${dockerImageName} src/publish/.
+  //       docker push ${dockerImageName}
+  //       docker images | grep none | awk '{print $3}' | xargs docker rmi
+  //       `;
+  // const deployFileContent = `
+  //       #!/bin/bash
+  //       docker build --network=host -t ${dockerImageName} src/publish/.
+  //       docker push ${dockerImageName}
+  //       docker stop ${appSubName}
+  //       docker images | grep none | awk '{print $3}' | xargs docker rmi
+  //       `;
+  // return hasDeployed ? deployFileContent : firstDeployFileContent;
+
+  const deployCmd = `cd ~ && sh deploy.sh ${port} ${appSubName} ${dockerImageName}`;
   const deployFileContent = `
         #!/bin/bash
         docker build --network=host -t ${dockerImageName} src/publish/.
         docker push ${dockerImageName} 
-        docker stop ${appSubName}
         docker images | grep none | awk '{print $3}' | xargs docker rmi
+
+        ssh -t -i ~/.ssh/def.pem root@123.57.239.134 "bash -c \'${deployCmd}\'"
         `;
-  return hasDeployed ? deployFileContent : firstDeployFileContent;
+  return deployFileContent;
 };
 
 const getDockerfileContent = (
@@ -259,6 +273,7 @@ export const publishApp = async (
     );
     const deployFilePath = 'src/publish/deploy.sh';
     const deployFileContent = getDeployFileContent(
+      port,
       appName,
       appSubName,
       version
@@ -280,10 +295,10 @@ export const publishApp = async (
     await execPromise(`${deployFilePath} > ${deployLogFilePath} 2>&1`);
     // 取消监听 log 文件
     fs.unwatchFile(deployLogFilePath);
-    // 启动 docker 镜像
-    await execPromise(
-      `docker run -d -p ${port}:80 --rm --name ${appSubName} ${dockerImageName}`
-    );
+    // // 启动 docker 镜像
+    // await execPromise(
+    //   `docker run -d -p ${port}:80 --rm --name ${appSubName} ${dockerImageName}`
+    // );
 
     // 线上发布时，合并当前分支到 master
     if (publishEnv === 'online') {
